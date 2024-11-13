@@ -2,39 +2,37 @@ const express = require("express")
 const mongoose = require("mongoose")
 const dotenv = require("dotenv")
 
-const app = express();
-const post = process.env.PORT || 3000;
-const uri = process.env.Mongo_URI;
+dotenv.config();
 
-const client = new MongoClient(uri);
+const app = express();
+const port = process.env.PORT || 3000;
+
+
+
 
 app.use(express.json());
 
-const connections = [];
-const models = [];
+const connections = {};
+const models = {};
 
 const bankUserSchema = new mongoose.Schema({});
 
 const getConnection = async (dbName) => {
-    console.log("getConnection called with dbName ")
-    if (!getConnections[dbName]) {
+    console.log(`getConnection called with ${dbName}`);
 
-
-        connections[dbName] = await mongoose.createConnection(process.env.MONGO_URI, { dbName: dbName });
-        console.log(dbName);
-
+    if (!connections[dbName]) {
+        connections[dbName] = await mongoose.createConnection(process.env.MONGO_URI, { dbName: dbName, autoIndex: false });
+        // Await the 'open' event to ensure the connection is established
+        await new Promise((resolve, reject) => {
+            connections[dbName].once('open', resolve);
+            connections[dbName].once('error', reject);
+        });
+        console.log(`Connected to database ${dbName}`);
+    } else {
+        console.log('Reusing existing connection for db', dbName);
     }
-    else {
-
-        console.log(`Connection for ${dbName} already exists`)
-
-    };
     return connections[dbName];
-
-
-
 };
-console.log(getConnection);
 
 
 const getModel = async (dbName, collectionName) => {
